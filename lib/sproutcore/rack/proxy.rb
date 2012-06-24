@@ -143,18 +143,20 @@ if SC::PROXY_ENABLED
           request_options = {}
           request_options[:head] = headers
           request_options[:body] = req_body if !!req_body
-          if proxy[:inactivity_timeout] # allow the more verbose setting to take precedence
-            request_options[:inactivity_timeout] = proxy[:inactivity_timeout]
-          elsif proxy[:timeout] # check the legacy and simpler setting
-            request_options[:inactivity_timeout] = proxy[:timeout]
-          end
-          request_options[:connect_timeout] = proxy[:connect_timeout] if proxy[:connect_timeout]
           request_options[:redirects] = 10 if proxy[:redirect] != false
           request_options[:decoding] = false  # don't decode gzipped content
 
+          connection_options = {}
+          if proxy[:inactivity_timeout] # allow the more verbose setting to take precedence
+            connection_options[:inactivity_timeout] = proxy[:inactivity_timeout]
+          elsif proxy[:timeout] # check the legacy and simpler setting
+            connection_options[:inactivity_timeout] = proxy[:timeout]
+          end
+          connection_options[:connect_timeout] = proxy[:connect_timeout] if proxy[:connect_timeout]
+
           EventMachine.run {
             body = nil
-            conn = EM::HttpRequest.new(url)
+            conn = EM::HttpRequest.new(url, connection_options)
             chunked = false
             headers = {}
             method = env['REQUEST_METHOD'].upcase
